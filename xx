@@ -1,0 +1,120 @@
+#!/bin/bash
+
+# ===== variables
+PROJECT_NAME="mkv2mp4"
+VERSION="mkv2mp4 v1.0"
+UPDATE_URL="https://intechgeek.com/mkv-to-mp4/"
+
+IN_DIR="input"
+OUT_DIR="output"
+TOOLS_DIR="tools"
+FFMPEG="./$TOOLS_DIR/ffmpeg"
+
+# ===== ANSI color code variables
+BOLD="\e[1m"
+CYAN="\e[96m"
+BLUEBG="\e[104m"
+GREEN="\e[0;32m"
+HRED="\e[0;91m"
+WHITE="\e[97m"
+NC="\e[0m"
+EXPND="\e[K"
+
+# ===== for centering strings
+ECHO_CENTER() {
+	printf "%*s\n" $((( ${#1} + $(tput cols) ) / 2)) "$1"
+}
+
+# ===== ECHO_CENTER variables go here
+NAME_TXT=$(ECHO_CENTER "$PROJECT_NAME")
+
+# ===== continue
+PRESS_ENTER() {
+	echo ""
+	echo -n -e "	${GREEN}Press Enter to continue${NC} "
+	read
+	clear
+}
+
+# ===== incorrect selection
+INCORRECT_SELECTION() {
+	echo -e "${HRED}Incorrect selection! Try again.${NC}"
+}
+
+# ===== convert mkv files
+CONVERT_FILES() {
+	if ls $IN_DIR/*.mkv > /dev/null 2>&1; then
+		for i in $IN_DIR/*.mkv; do
+			$FFMPEG -y -i "$i" -codec copy -movflags +faststart "${i%.*}.mp4"
+		done
+		mv -f $IN_DIR/*.mp4 $OUT_DIR/
+	else
+		echo -e "${HRED}There are no mkv files in the $IN_DIR folder${NC}"
+	fi
+}
+
+# ===== delete mkv files from input folder
+CLEAN_INPUT() {
+	if ls $IN_DIR/*.mkv > /dev/null 2>&1; then
+		rm -rf $IN_DIR/*.mkv
+		echo -e "${GREEN}Done!${NC}"
+	else
+		echo -e "${HRED}There are no mkv files to remove in the $IN_DIR folder${NC}"
+	fi
+}
+
+# ===== check for update
+VISIT_ITG() {
+	echo ""
+	echo "Visit website?"
+	read -e -p "(Y/n) $ " VISIT
+	if [[ -z $VISIT || $VISIT =~ ^([yY]|[yY][eE][sS]) ]]; then
+		if command -v xdg-open > /dev/null; then
+			xdg-open $UPDATE_URL > /dev/null 2>&1
+		elif command -v gnome-open > /dev/null; then
+			gnome-open $UPDATE_URL > /dev/null 2>&1
+		fi
+	fi
+	clear
+}
+CHECK_FOR_UPDATE() {
+	echo -e "${GREEN}Please wait...${NC}"
+	echo ""
+	SITE_VERSION=$(wget -q $UPDATE_URL -O - | grep -m 1 -o -P '.{0,0}mkv2mp4 v.{0,3}')
+	if [[ $VERSION == $SITE_VERSION ]]; then
+		echo -e "${GREEN}Your installed version is up to date"
+		echo ""
+		echo -e "For more info visit:${NC}"
+		echo -e "${CYAN}$UPDATE_URL${NC}"
+		VISIT_ITG
+	else
+		echo -e "${GREEN}Update available"
+		echo ""
+		echo -e "To download the latest version go to:${NC}"
+		echo -e "${CYAN}$UPDATE_URL${NC}"
+		VISIT_ITG
+	fi
+}
+
+# ===== menu
+clear
+SELECTION=
+until [[ $SELECTION = 0 ]]; do
+    echo -e "${BLUEBG}${EXPND}${WHITE}${BOLD}$NAME_TXT${NC}"
+    echo ""
+    echo "	1  -  Convert mkv to mp4"
+    echo "	2  -  Clean input folder"
+    echo "	3  -  Check for update"
+    echo "	0  -  Exit"
+    echo ""
+    echo -n "	Enter selection: "
+    read SELECTION
+    echo ""
+    case $SELECTION in
+        1 ) clear ; CONVERT_FILES ; PRESS_ENTER ;;
+        2 ) clear ; CLEAN_INPUT ; PRESS_ENTER ;;
+        3 ) clear ; CHECK_FOR_UPDATE ;;
+        0 ) clear ; exit ;;
+        * ) clear ; INCORRECT_SELECTION ; PRESS_ENTER ;;
+    esac
+done
