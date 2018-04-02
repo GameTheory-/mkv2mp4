@@ -2,12 +2,13 @@
 
 # ===== variables
 PROJECT_NAME="mkv2mp4"
-VERSION="mkv2mp4 v1.0"
+VERSION="mkv2mp4 v1.1"
 UPDATE_URL="https://intechgeek.com/mkv-to-mp4/"
 
 IN_DIR="input"
 OUT_DIR="output"
 TOOLS_DIR="tools"
+SRT_DIR="srt"
 FFMPEG="./$TOOLS_DIR/ffmpeg"
 
 # ===== ANSI color code variables
@@ -53,14 +54,11 @@ CONVERT_FILES() {
 	fi
 }
 
-# ===== delete mkv files from input folder
+# ===== clean srt and input folders
 CLEAN_INPUT() {
-	if ls $IN_DIR/*.mkv > /dev/null 2>&1; then
-		rm -rf $IN_DIR/*.mkv
-		echo -e "${GREEN}Done!${NC}"
-	else
-		echo -e "${HRED}There are no mkv files to remove in the $IN_DIR folder${NC}"
-	fi
+	find $IN_DIR -type f -not -name "readme" -delete
+	find $SRT_DIR -type f -not -name "readme" -delete
+	echo -e "${GREEN}Clean!${NC}"
 }
 
 # ===== check for update
@@ -96,6 +94,67 @@ CHECK_FOR_UPDATE() {
 	fi
 }
 
+# ===== append srt to mp4
+APPEND_SRT() {
+	if ls $IN_DIR/*.mp4 > /dev/null 2>&1; then
+		MP4_DIR_0=$(echo "$IN_DIR/*.mp4")
+	fi
+	if ls $OUT_DIR/*.mp4 > /dev/null 2>&1; then
+		MP4_DIR_1=$(echo "$OUT_DIR/*.mp4")
+	fi
+	if ls $SRT_DIR/*.srt > /dev/null 2>&1; then
+		SRT_DIR_0=$(echo "$SRT_DIR/*.srt")
+	fi
+	if [[ ! -z $MP4_DIR_0 || ! -z $MP4_DIR_1 ]] && [[ ! -z $SRT_DIR_0 ]]; then
+		PROMPT="
+Please select an mp4:"
+		OPTIONS=( $MP4_DIR_0 $MP4_DIR_1 )
+		PS3="$PROMPT "
+		echo ""
+		select MP4 in "${OPTIONS[@]}" "Quit" ; do 
+			if (( REPLY == 1 + ${#OPTIONS[@]} )) ; then
+				clear
+				break
+			elif (( REPLY > 0 && REPLY <= ${#OPTIONS[@]} )) ; then
+				clear
+				break
+			else
+				echo -e "${HRED}Invalid selection. Try again.${NC}"
+			fi
+		done
+
+		if [[ $MP4 != "Quit" ]]; then
+			PROMPT2="
+Please select an srt:"
+			OPTIONS2=( $SRT_DIR_0 )
+			PS3="$PROMPT2 "
+			echo ""
+			select SRT in "${OPTIONS2[@]}" "Quit" ; do 
+				if (( REPLY == 1 + ${#OPTIONS2[@]} )) ; then
+					clear
+					break
+				elif (( REPLY > 0 && REPLY <= ${#OPTIONS2[@]} )) ; then
+					clear
+					break
+				else
+					echo -e "${HRED}Invalid selection. Try again.${NC}"
+				fi
+			done
+		fi
+
+		if [[ $MP4 != "Quit" && $SRT != "Quit" ]]; then
+			$FFMPEG -y -i "$MP4" -i "$SRT" -c copy -c:s mov_text $OUT_DIR/outfile-srt.mp4
+		else
+			echo -e "${HRED}Aborted!${NC}"
+		fi
+	else
+		echo -e "${HRED}Aborted!"
+		echo -e "${GREEN}Make sure you have an mp4 file in"
+		echo "either the input or output folder. Also make"
+		echo -e "sure to have an srt file in the srt folder.${NC}"
+	fi
+}
+
 # ===== menu
 clear
 SELECTION=
@@ -103,8 +162,9 @@ until [[ $SELECTION = 0 ]]; do
     echo -e "${BLUEBG}${EXPND}${WHITE}${BOLD}$NAME_TXT${NC}"
     echo ""
     echo "	1  -  Convert mkv to mp4"
-    echo "	2  -  Clean input folder"
-    echo "	3  -  Check for update"
+    echo "	2  -  Append subtitle srt to mp4"
+    echo "	3  -  Clean srt & input folders"
+    echo "	4  -  Check for update"
     echo "	0  -  Exit"
     echo ""
     echo -n "	Enter selection: "
@@ -112,8 +172,9 @@ until [[ $SELECTION = 0 ]]; do
     echo ""
     case $SELECTION in
         1 ) clear ; CONVERT_FILES ; PRESS_ENTER ;;
-        2 ) clear ; CLEAN_INPUT ; PRESS_ENTER ;;
-        3 ) clear ; CHECK_FOR_UPDATE ;;
+        2 ) clear ; APPEND_SRT ; PRESS_ENTER ;;
+        3 ) clear ; CLEAN_INPUT ; PRESS_ENTER ;;
+        4 ) clear ; CHECK_FOR_UPDATE ;;
         0 ) clear ; exit ;;
         * ) clear ; INCORRECT_SELECTION ; PRESS_ENTER ;;
     esac

@@ -1,3 +1,4 @@
-# Do not track mkv or mp4 files
+# Do not track mkv, mp4, and srt files
 *.mkv
 *.mp4
+*.srt
