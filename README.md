@@ -12,8 +12,8 @@ Allows conversion of one or multiple mkv files at once.
 
 1. Place mkv files in the **input** folder
 2. Optional - place srt in the **srt** folder
-2. Then execute the script as follows in terminal: `./xx`
-3. Your mp4 converted files will be in the **output** folder
+3. Then execute the script as follows in terminal: `./xx`
+4. Your mp4 converted files will be in the **output** folder
 
 ### Project Page
 https://intechgeek.com/mkv-to-mp4/
