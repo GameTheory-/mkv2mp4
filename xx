@@ -2,14 +2,18 @@
 
 # ===== variables
 PROJECT_NAME="mkv2mp4"
-VERSION="mkv2mp4 v1.1"
+VERSION="mkv2mp4 v1.2"
 UPDATE_URL="https://intechgeek.com/mkv-to-mp4/"
 
-IN_DIR="input"
-OUT_DIR="output"
-TOOLS_DIR="tools"
-SRT_DIR="srt"
-FFMPEG="./$TOOLS_DIR/ffmpeg"
+DESKTOP_SHORTCUT=/home/$(whoami)/.local/share/applications/mkv-to-mp4.desktop
+BASE=$(cd -P -- "$(dirname -- "$0")" && pwd -P)
+THIS_SCRIPT=$BASE/$(basename $0)
+IN_DIR=$BASE/input
+OUT_DIR=$BASE/output
+TOOLS_DIR=$BASE/tools
+SRT_DIR=$BASE/srt
+FFMPEG="$TOOLS_DIR/ffmpeg"
+ICON=$TOOLS_DIR/icon.png
 
 # ===== ANSI color code variables
 BOLD="\e[1m"
@@ -20,6 +24,7 @@ HRED="\e[0;91m"
 WHITE="\e[97m"
 NC="\e[0m"
 EXPND="\e[K"
+CYAN="\e[96m"
 
 # ===== for centering strings
 ECHO_CENTER() {
@@ -54,11 +59,34 @@ CONVERT_FILES() {
 	fi
 }
 
-# ===== clean srt and input folders
+# ===== clean input, srt, and output folders
 CLEAN_INPUT() {
-	find $IN_DIR -type f -not -name "readme" -delete
-	find $SRT_DIR -type f -not -name "readme" -delete
-	echo -e "${GREEN}Clean!${NC}"
+	echo -e "${GREEN}Clean the ${BOLD}input ${GREEN}folder?${NC}"
+	echo ""
+	read -e -p "(Y/n) $ " CLEAN_IN
+	if [[ -z $CLEAN_IN || $CLEAN_IN =~ ^([yY]|[yY][eE][sS]) ]]; then
+		find $IN_DIR -type f -not -name "readme" -delete
+		echo -e "${GREEN}Clean!${NC}"
+		echo ""
+	fi
+
+	echo -e "${GREEN}Clean the ${BOLD}srt ${GREEN}folder?${NC}"
+	echo ""
+	read -e -p "(Y/n) $ " CLEAN_SRT
+	if [[ -z $CLEAN_SRT || $CLEAN_SRT =~ ^([yY]|[yY][eE][sS]) ]]; then
+		find $SRT_DIR -type f -not -name "readme" -delete
+		echo -e "${GREEN}Clean!${NC}"
+		echo ""
+	fi
+
+	echo -e "${GREEN}Clean the ${BOLD}output ${GREEN}folder?${NC}"
+	echo ""
+	read -e -p "(Y/n) $ " CLEAN_OUT
+	if [[ -z $CLEAN_OUT || $CLEAN_OUT =~ ^([yY]|[yY][eE][sS]) ]]; then
+		find $OUT_DIR -type f -not -name "readme" -delete
+		echo -e "${GREEN}Clean!${NC}"
+		echo ""
+	fi
 }
 
 # ===== check for update
@@ -143,7 +171,7 @@ Please select an srt:"
 		fi
 
 		if [[ $MP4 != "Quit" && $SRT != "Quit" ]]; then
-			$FFMPEG -y -i "$MP4" -i "$SRT" -c copy -c:s mov_text $OUT_DIR/outfile-srt.mp4
+			$FFMPEG -y -i "$MP4" -i "$SRT" -c copy -c:s mov_text "$OUT_DIR/outfile-srt.mp4"
 		else
 			echo -e "${HRED}Aborted!${NC}"
 		fi
@@ -155,6 +183,27 @@ Please select an srt:"
 	fi
 }
 
+# ===== create desktop shortcut
+ADD_DESKTOP_SHORTCUT() {
+	echo "[Desktop Entry]" > $DESKTOP_SHORTCUT
+	echo "Type=Application" >> $DESKTOP_SHORTCUT
+	echo "Name=$PROJECT_NAME" >> $DESKTOP_SHORTCUT
+	echo "Exec=\"$THIS_SCRIPT\" %U" >> $DESKTOP_SHORTCUT
+	echo "Icon=$ICON" >> $DESKTOP_SHORTCUT
+	echo "Categories=Utility;" >> $DESKTOP_SHORTCUT
+	echo "Terminal=true" >> $DESKTOP_SHORTCUT
+
+	# Updates the desktop entries
+	gtk-update-icon-cache /usr/share/icons/hicolor
+
+	if [[ -f $DESKTOP_SHORTCUT ]]; then
+		echo -e "${GREEN}Desktop entry added for ${CYAN}${BOLD}$(whoami)${NC}"
+		echo -e "${GREEN}Check your apps dash for the shortcut.${NC}"
+	else
+		echo -e "${HRED}oops! Shortcut failed. Please try again.${NC}"
+	fi
+}
+
 # ===== menu
 clear
 SELECTION=
@@ -163,8 +212,9 @@ until [[ $SELECTION = 0 ]]; do
     echo ""
     echo "	1  -  Convert mkv to mp4"
     echo "	2  -  Append subtitle srt to mp4"
-    echo "	3  -  Clean srt & input folders"
+    echo "	3  -  Clean input, srt or output folders"
     echo "	4  -  Check for update"
+    echo "	5  -  Add Desktop Shortcut"
     echo "	0  -  Exit"
     echo ""
     echo -n "	Enter selection: "
@@ -175,6 +225,7 @@ until [[ $SELECTION = 0 ]]; do
         2 ) clear ; APPEND_SRT ; PRESS_ENTER ;;
         3 ) clear ; CLEAN_INPUT ; PRESS_ENTER ;;
         4 ) clear ; CHECK_FOR_UPDATE ;;
+        5 ) clear ; ADD_DESKTOP_SHORTCUT ; PRESS_ENTER ;;
         0 ) clear ; exit ;;
         * ) clear ; INCORRECT_SELECTION ; PRESS_ENTER ;;
     esac
