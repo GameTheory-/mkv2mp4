@@ -12,7 +12,7 @@ IN_DIR=$BASE/input
 OUT_DIR=$BASE/output
 TOOLS_DIR=$BASE/tools
 SRT_DIR=$BASE/srt
-FFMPEG="$TOOLS_DIR/ffmpeg"
+FFMPEG=$TOOLS_DIR/ffmpeg
 ICON=$TOOLS_DIR/icon.png
 
 # ===== ANSI color code variables
@@ -25,6 +25,11 @@ WHITE="\e[97m"
 NC="\e[0m"
 EXPND="\e[K"
 CYAN="\e[96m"
+
+# ===== make sure ffmpeg is executable
+if [[ ! -x "$FFMPEG" ]]; then
+	chmod +x "$FFMPEG"
+fi
 
 # ===== for centering strings
 ECHO_CENTER() {
@@ -49,11 +54,11 @@ INCORRECT_SELECTION() {
 
 # ===== convert mkv files
 CONVERT_FILES() {
-	if ls $IN_DIR/*.mkv > /dev/null 2>&1; then
-		for i in $IN_DIR/*.mkv; do
-			$FFMPEG -y -i "$i" -codec copy -movflags +faststart "${i%.*}.mp4"
+	if ls "$IN_DIR"/*.mkv > /dev/null 2>&1; then
+		for i in "$IN_DIR"/*.mkv; do
+			"$FFMPEG" -y -i "$i" -codec copy -movflags +faststart "${i%.*}.mp4"
 		done
-		mv -f $IN_DIR/*.mp4 $OUT_DIR/
+		mv -f "$IN_DIR"/*.mp4 "$OUT_DIR"/
 	else
 		echo -e "${HRED}There are no mkv files in the $IN_DIR folder${NC}"
 	fi
@@ -65,7 +70,7 @@ CLEAN_INPUT() {
 	echo ""
 	read -e -p "(Y/n) $ " CLEAN_IN
 	if [[ -z $CLEAN_IN || $CLEAN_IN =~ ^([yY]|[yY][eE][sS]) ]]; then
-		find $IN_DIR -type f -not -name "readme" -delete
+		find "$IN_DIR" -type f -not -name "readme" -delete
 		echo -e "${GREEN}Clean!${NC}"
 		echo ""
 	fi
@@ -74,7 +79,7 @@ CLEAN_INPUT() {
 	echo ""
 	read -e -p "(Y/n) $ " CLEAN_SRT
 	if [[ -z $CLEAN_SRT || $CLEAN_SRT =~ ^([yY]|[yY][eE][sS]) ]]; then
-		find $SRT_DIR -type f -not -name "readme" -delete
+		find "$SRT_DIR" -type f -not -name "readme" -delete
 		echo -e "${GREEN}Clean!${NC}"
 		echo ""
 	fi
@@ -83,7 +88,7 @@ CLEAN_INPUT() {
 	echo ""
 	read -e -p "(Y/n) $ " CLEAN_OUT
 	if [[ -z $CLEAN_OUT || $CLEAN_OUT =~ ^([yY]|[yY][eE][sS]) ]]; then
-		find $OUT_DIR -type f -not -name "readme" -delete
+		find "$OUT_DIR" -type f -not -name "readme" -delete
 		echo -e "${GREEN}Clean!${NC}"
 		echo ""
 	fi
@@ -96,9 +101,9 @@ VISIT_ITG() {
 	read -e -p "(Y/n) $ " VISIT
 	if [[ -z $VISIT || $VISIT =~ ^([yY]|[yY][eE][sS]) ]]; then
 		if command -v xdg-open > /dev/null; then
-			xdg-open $UPDATE_URL > /dev/null 2>&1
+			xdg-open "$UPDATE_URL" > /dev/null 2>&1
 		elif command -v gnome-open > /dev/null; then
-			gnome-open $UPDATE_URL > /dev/null 2>&1
+			gnome-open "$UPDATE_URL" > /dev/null 2>&1
 		fi
 	fi
 	clear
@@ -124,13 +129,13 @@ CHECK_FOR_UPDATE() {
 
 # ===== append srt to mp4
 APPEND_SRT() {
-	if ls $IN_DIR/*.mp4 > /dev/null 2>&1; then
+	if ls "$IN_DIR"/*.mp4 > /dev/null 2>&1; then
 		MP4_DIR_0=$(echo "$IN_DIR/*.mp4")
 	fi
-	if ls $OUT_DIR/*.mp4 > /dev/null 2>&1; then
+	if ls "$OUT_DIR"/*.mp4 > /dev/null 2>&1; then
 		MP4_DIR_1=$(echo "$OUT_DIR/*.mp4")
 	fi
-	if ls $SRT_DIR/*.srt > /dev/null 2>&1; then
+	if ls "$SRT_DIR"/*.srt > /dev/null 2>&1; then
 		SRT_DIR_0=$(echo "$SRT_DIR/*.srt")
 	fi
 	if [[ ! -z $MP4_DIR_0 || ! -z $MP4_DIR_1 ]] && [[ ! -z $SRT_DIR_0 ]]; then
@@ -171,7 +176,7 @@ Please select an srt:"
 		fi
 
 		if [[ $MP4 != "Quit" && $SRT != "Quit" ]]; then
-			$FFMPEG -y -i "$MP4" -i "$SRT" -c copy -c:s mov_text "$OUT_DIR/outfile-srt.mp4"
+			"$FFMPEG" -y -i "$MP4" -i "$SRT" -c copy -c:s mov_text "$OUT_DIR/outfile-srt.mp4"
 		else
 			echo -e "${HRED}Aborted!${NC}"
 		fi
@@ -198,7 +203,7 @@ ADD_DESKTOP_SHORTCUT() {
 
 	if [[ -f $DESKTOP_SHORTCUT ]]; then
 		echo -e "${GREEN}Desktop entry added for ${CYAN}${BOLD}$(whoami)${NC}"
-		echo -e "${GREEN}Check your apps dash for the shortcut.${NC}"
+		echo -e "${GREEN}Check your apps menu for the shortcut.${NC}"
 	else
 		echo -e "${HRED}oops! Shortcut failed. Please try again.${NC}"
 	fi
