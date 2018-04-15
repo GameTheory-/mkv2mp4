@@ -1,4 +1,4 @@
-# mkv2mp4
+# mkv2mp4 v1.2
 ![image](tools/mkv2mp4.png)
 
 A simple bash script to convert mkv to mp4 container in seconds

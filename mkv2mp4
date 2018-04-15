@@ -4,6 +4,7 @@
 PROJECT_NAME="mkv2mp4"
 VERSION="mkv2mp4 v1.2"
 UPDATE_URL="https://intechgeek.com/mkv-to-mp4/"
+REPO_UPDATEURL="https://github.com/GameTheory-/mkv2mp4"
 
 DESKTOP_SHORTCUT=/home/$(whoami)/.local/share/applications/mkv-to-mp4.desktop
 BASE=$(cd -P -- "$(dirname -- "$0")" && pwd -P)
@@ -111,7 +112,7 @@ VISIT_ITG() {
 CHECK_FOR_UPDATE() {
 	echo -e "${GREEN}Please wait...${NC}"
 	echo ""
-	SITE_VERSION=$(wget -q $UPDATE_URL -O - | grep -m 1 -o -P '.{0,0}mkv2mp4 v.{0,3}')
+	SITE_VERSION=$(wget -q $REPO_UPDATEURL -O - | grep -m 1 -o -P '.{0,0}mkv2mp4 v.{0,3}')
 	if [[ $VERSION == $SITE_VERSION ]]; then
 		echo -e "${GREEN}Your installed version is up to date"
 		echo ""
