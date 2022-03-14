@@ -2,8 +2,8 @@
 
 # ===== variables
 PROJECT_NAME="mkv2mp4"
-VERSION="mkv2mp4 v1.2"
-UPDATE_URL="https://intechgeek.com/mkv-to-mp4/"
+VERSION="$PROJECT_NAME v1.3"
+UPDATE_URL="https://techstop.github.io/mkv-to-mp4/"
 REPO_UPDATEURL="https://github.com/GameTheory-/mkv2mp4"
 
 DESKTOP_SHORTCUT=/home/$(whoami)/.local/share/applications/mkv-to-mp4.desktop
@@ -56,10 +56,14 @@ INCORRECT_SELECTION() {
 # ===== convert mkv files
 CONVERT_FILES() {
 	if ls "$IN_DIR"/*.mkv > /dev/null 2>&1; then
+    echo -e "${GREEN}Please Wait...${NC}"
+    echo ""
 		for i in "$IN_DIR"/*.mkv; do
 			"$FFMPEG" -y -i "$i" -codec copy -movflags +faststart "${i%.*}.mp4"
 		done
 		mv -f "$IN_DIR"/*.mp4 "$OUT_DIR"/
+    echo ""
+    echo -e "${GREEN}Done!${NC}"
 	else
 		echo -e "${HRED}There are no mkv files in the $IN_DIR folder${NC}"
 	fi
@@ -72,7 +76,8 @@ CLEAN_INPUT() {
 	read -e -p "(Y/n) $ " CLEAN_IN
 	if [[ -z $CLEAN_IN || $CLEAN_IN =~ ^([yY]|[yY][eE][sS]) ]]; then
 		find "$IN_DIR" -type f -not -name "readme" -delete
-		echo -e "${GREEN}Clean!${NC}"
+    echo ""
+		echo -e "${GREEN}Done!${NC}"
 		echo ""
 	fi
 
@@ -81,7 +86,8 @@ CLEAN_INPUT() {
 	read -e -p "(Y/n) $ " CLEAN_SRT
 	if [[ -z $CLEAN_SRT || $CLEAN_SRT =~ ^([yY]|[yY][eE][sS]) ]]; then
 		find "$SRT_DIR" -type f -not -name "readme" -delete
-		echo -e "${GREEN}Clean!${NC}"
+    echo ""
+		echo -e "${GREEN}Done!${NC}"
 		echo ""
 	fi
 
@@ -90,7 +96,8 @@ CLEAN_INPUT() {
 	read -e -p "(Y/n) $ " CLEAN_OUT
 	if [[ -z $CLEAN_OUT || $CLEAN_OUT =~ ^([yY]|[yY][eE][sS]) ]]; then
 		find "$OUT_DIR" -type f -not -name "readme" -delete
-		echo -e "${GREEN}Clean!${NC}"
+    echo ""
+		echo -e "${GREEN}Done!${NC}"
 		echo ""
 	fi
 }
@@ -98,9 +105,9 @@ CLEAN_INPUT() {
 # ===== check for update
 VISIT_ITG() {
 	echo ""
-	echo "Visit website?"
-	read -e -p "(Y/n) $ " VISIT
-	if [[ -z $VISIT || $VISIT =~ ^([yY]|[yY][eE][sS]) ]]; then
+	echo -e "${GREEN}Visit website?${NC}"
+	read -ep "(Y/n) $ " VISIT
+	if [[ -z "$VISIT" || "$VISIT" =~ ^([yY]|[yY][eE][sS]) ]]; then
 		if command -v xdg-open > /dev/null; then
 			xdg-open "$UPDATE_URL" > /dev/null 2>&1
 		elif command -v gnome-open > /dev/null; then
@@ -112,9 +119,12 @@ VISIT_ITG() {
 CHECK_FOR_UPDATE() {
 	echo -e "${GREEN}Please wait...${NC}"
 	echo ""
-	SITE_VERSION=$(wget -q $REPO_UPDATEURL -O - | grep -m 1 -o -P '.{0,0}mkv2mp4 v.{0,3}')
-	if [[ $VERSION == $SITE_VERSION ]]; then
-		echo -e "${GREEN}Your installed version is up to date"
+	SITE_VERSION=$(wget -q "$REPO_UPDATEURL" -O - | grep -m 1 -o -P '.{0,0}mkv2mp4 v.{0,3}')
+  clear
+	if [ "$VERSION" = "$SITE_VERSION" ]; then
+		echo -e "${GREEN}$VERSION"
+		echo ""
+		echo "No update available. Check again later."
 		echo ""
 		echo -e "For more info visit:${NC}"
 		echo -e "${CYAN}$UPDATE_URL${NC}"
@@ -130,6 +140,7 @@ CHECK_FOR_UPDATE() {
 
 # ===== append srt to mp4
 APPEND_SRT() {
+  QUIT=$(echo -e "${HRED}Quit${NC}")
 	if ls "$IN_DIR"/*.mp4 > /dev/null 2>&1; then
 		MP4_DIR_0=$(echo "$IN_DIR/*.mp4")
 	fi
@@ -145,7 +156,7 @@ Please select an mp4:"
 		OPTIONS=( $MP4_DIR_0 $MP4_DIR_1 )
 		PS3="$PROMPT "
 		echo ""
-		select MP4 in "${OPTIONS[@]}" "Quit" ; do 
+		select MP4 in "${OPTIONS[@]}" "$QUIT"; do 
 			if (( REPLY == 1 + ${#OPTIONS[@]} )) ; then
 				clear
 				break
@@ -163,7 +174,7 @@ Please select an srt:"
 			OPTIONS2=( $SRT_DIR_0 )
 			PS3="$PROMPT2 "
 			echo ""
-			select SRT in "${OPTIONS2[@]}" "Quit" ; do 
+			select SRT in "${OPTIONS2[@]}" "$QUIT"; do 
 				if (( REPLY == 1 + ${#OPTIONS2[@]} )) ; then
 					clear
 					break
@@ -177,12 +188,14 @@ Please select an srt:"
 		fi
 
 		if [[ $MP4 != "Quit" && $SRT != "Quit" ]]; then
-			"$FFMPEG" -y -i "$MP4" -i "$SRT" -c copy -c:s mov_text "$OUT_DIR/outfile-srt.mp4"
+			"$FFMPEG" -y -i "$MP4" -i "$SRT" -c copy -c:s mov_text "$OUT_DIR/$(basename ${MP4%.*})-srt.mp4"
+      echo ""
+			echo -e "${GREEN}Done!${NC}"
 		else
 			echo -e "${HRED}Aborted!${NC}"
 		fi
 	else
-		echo -e "${HRED}Aborted!"
+		echo -e "${HRED}Aborted!${NC}"
 		echo -e "${GREEN}Make sure you have an mp4 file in"
 		echo "either the input or output folder. Also make"
 		echo -e "sure to have an srt file in the srt folder.${NC}"
@@ -194,33 +207,30 @@ ADD_DESKTOP_SHORTCUT() {
 	echo "[Desktop Entry]" > $DESKTOP_SHORTCUT
 	echo "Type=Application" >> $DESKTOP_SHORTCUT
 	echo "Name=$PROJECT_NAME" >> $DESKTOP_SHORTCUT
-	echo "Exec=\"$THIS_SCRIPT\" %U" >> $DESKTOP_SHORTCUT
+	echo "Exec=\"$THIS_SCRIPT\"" >> $DESKTOP_SHORTCUT
 	echo "Icon=$ICON" >> $DESKTOP_SHORTCUT
 	echo "Categories=Utility;" >> $DESKTOP_SHORTCUT
 	echo "Terminal=true" >> $DESKTOP_SHORTCUT
-
-	# Updates the desktop entries
-	gtk-update-icon-cache /usr/share/icons/hicolor
 
 	if [[ -f $DESKTOP_SHORTCUT ]]; then
 		echo -e "${GREEN}Desktop entry added for ${CYAN}${BOLD}$(whoami)${NC}"
 		echo -e "${GREEN}Check your apps menu for the shortcut.${NC}"
 	else
-		echo -e "${HRED}oops! Shortcut failed. Please try again.${NC}"
+		echo -e "${HRED}Shortcut failed. Please try again.${NC}"
 	fi
 }
 
 # ===== menu
-clear
 SELECTION=
-until [[ $SELECTION = 0 ]]; do
+until [ "$SELECTION" = "0" ]; do
+    clear
     echo -e "${BLUEBG}${EXPND}${WHITE}${BOLD}$NAME_TXT${NC}"
     echo ""
     echo "	1  -  Convert mkv to mp4"
     echo "	2  -  Append subtitle srt to mp4"
     echo "	3  -  Clean input, srt or output folders"
     echo "	4  -  Check for update"
-    echo "	5  -  Add Desktop Shortcut"
+    echo "	s  -  Add Desktop Shortcut"
     echo "	0  -  Exit"
     echo ""
     echo -n "	Enter selection: "
@@ -230,7 +240,7 @@ until [[ $SELECTION = 0 ]]; do
         1 ) clear ; CONVERT_FILES ; PRESS_ENTER ;;
         2 ) clear ; APPEND_SRT ; PRESS_ENTER ;;
         3 ) clear ; CLEAN_INPUT ; PRESS_ENTER ;;
-        4 ) clear ; CHECK_FOR_UPDATE ;;
+        4 ) clear ; CHECK_FOR_UPDATE ; PRESS_ENTER ;;
         5 ) clear ; ADD_DESKTOP_SHORTCUT ; PRESS_ENTER ;;
         0 ) clear ; exit ;;
         * ) clear ; INCORRECT_SELECTION ; PRESS_ENTER ;;
